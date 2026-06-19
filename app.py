@@ -508,9 +508,16 @@ def initialize_database():
     with get_db() as db:
         cursor = db.cursor()
         cursor.execute("SELECT id FROM users WHERE email='admin@hardsquid.mx'")
-        if not cursor.fetchone():
+        admin = cursor.fetchone()
+        if not admin:
             cursor.execute("INSERT INTO users(name,email,password_hash,role) VALUES(%s,%s,%s,'admin')",
                            ("Administrador Hard Squid", "admin@hardsquid.mx", generate_password_hash("Admin123!")))
+            db.commit()
+        elif os.getenv("RESET_ADMIN_PASSWORD", "0") == "1":
+            cursor.execute("""UPDATE users
+                              SET name=%s,password_hash=%s,role='admin',active=TRUE
+                              WHERE email=%s""",
+                           ("Administrador Hard Squid", generate_password_hash("Admin123!"), "admin@hardsquid.mx"))
             db.commit()
 
 
