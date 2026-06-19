@@ -463,16 +463,36 @@ def sales_csv():
     return Response("\ufeff" + output.getvalue(), mimetype="text/csv", headers={"Content-Disposition": "attachment; filename=ventas-hard-squid.csv"})
 
 
-@app.cli.command("init-db")
-def init_db_command():
+def initialize_database():
+    database_name = DB_CONFIG["database"]
+    if not database_name.replace("_", "").replace("-", "").isalnum():
+        raise RuntimeError("Nombre de base de datos inválido.")
+
     with open(os.path.join(BASE_DIR, "schema.sql"), encoding="utf-8") as schema:
         sql = schema.read()
-    with get_db(database=False) as db:
+
+    statements = [
+        statement.strip()
+        for statement in sql.split(";")
+        if statement.strip()
+        and not statement.strip().upper().startswith("CREATE DATABASE")
+        and not statement.strip().upper().startswith("USE ")
+    ]
+
+    try:
+        db = get_db(database=False)
         cursor = db.cursor()
-        for statement in sql.split(";"):
-            if statement.strip():
-                cursor.execute(statement)
+        cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{database_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+        cursor.execute(f"USE `{database_name}`")
+    except Exception:
+        db = get_db(database=True)
+        cursor = db.cursor()
+
+    with db:
+        for statement in statements:
+            cursor.execute(statement)
         db.commit()
+
     with get_db() as db:
         cursor = db.cursor()
         cursor.execute("SELECT id FROM users WHERE email='admin@hardsquid.mx'")
@@ -480,7 +500,19 @@ def init_db_command():
             cursor.execute("INSERT INTO users(name,email,password_hash,role) VALUES(%s,%s,%s,'admin')",
                            ("Administrador Hard Squid", "admin@hardsquid.mx", generate_password_hash("Admin123!")))
             db.commit()
+
+
+@app.cli.command("init-db")
+def init_db_command():
+    initialize_database()
     print("Base de datos preparada. Admin: admin@hardsquid.mx / Admin123!")
+
+
+if os.getenv("AUTO_INIT_DB", "0") == "1":
+    try:
+        initialize_database()
+    except Exception as exc:
+        print(f"No se pudo inicializar la base automáticamente: {exc}")
 
 
 if __name__ == "__main__":
