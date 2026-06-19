@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Ticket #{{ order.id }} — Hard Squid{% endblock %}
+
+{% block content %}
+<section class="ticket-wrap">
+  <article class="ticket">
+    <header>
+      <img src="{{ url_for('static', filename='img/hard-squid-logo.jpg') }}" alt="Hard Squid">
+      <div><h1>HARD SQUID</h1><p>Ticket de compra</p></div>
+      <b>#HS-{{ '%06d'|format(order.id) }}</b>
+    </header>
+    <div class="ticket-meta">
+      <div><span>Cliente</span><b>{{ order.name }}</b><small>{{ order.email }}</small></div>
+      <div><span>Fecha</span><b>{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</b><small>{{ order.payment_method }}</small></div>
+    </div>
+    <table>
+      <thead><tr><th>Artículo</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead>
+      <tbody>
+        {% for item in items %}
+        <tr><td>{{ item.product_name }}</td><td>{{ item.quantity }}</td><td>{{ item.unit_price|money }}</td><td>{{ item.subtotal|money }}</td></tr>
+        {% endfor %}
+      </tbody>
+      <tfoot><tr><td colspan="3">TOTAL</td><td>{{ order.total|money }} MXN</td></tr></tfoot>
+    </table>
+    <div class="ticket-message">Gracias por moverte con nosotros.<br><b>FUERZA PARA ADAPTARTE.</b></div>
+  </article>
+  <div class="ticket-actions">
+    <button class="button dark" onclick="window.print()">Imprimir / Guardar PDF</button>
+    {% if session.role in ['admin','empleado'] %}
+      <a class="button outline-dark" href="{{ url_for('admin_dashboard') }}">← Regresar al admin</a>
+      <a class="button outline-dark" href="{{ url_for('admin_sale') }}">Nueva venta</a>
+    {% else %}
+      <a class="button outline-dark" href="{{ url_for('catalog') }}">Volver a la tienda</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

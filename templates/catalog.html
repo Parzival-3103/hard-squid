@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% block title %}{{ category or 'Colección' }} — Hard Squid{% endblock %}{% block content %}
+<section class="page-hero"><span class="eyebrow dark">HARD SQUID PERFORMANCE</span><h1>{{ category or 'Toda la colección' }}</h1><p>Prendas funcionales para entrenar, moverte y superar tu marca.</p></section>
+<section class="section catalog-section"><form class="catalog-tools"><div class="filters"><a class="{% if not category %}active{% endif %}" href="{{ url_for('catalog') }}">Todo</a>{% for c in ['Dama','Caballero','Unisex'] %}<a class="{% if category==c %}active{% endif %}" href="{{ url_for('catalog', categoria=c) }}">{{ c }}</a>{% endfor %}</div><div class="search"><input name="q" value="{{ search }}" placeholder="Buscar producto"><button>Buscar</button></div></form><p class="result-count">{{ products|length }} productos</p><div class="product-grid">{% for product in products %}{% include '_product_card.html' %}{% else %}<div class="empty-state"><h3>No encontramos productos</h3><p>Prueba otra búsqueda o categoría.</p></div>{% endfor %}</div></section>
+{% endblock %}
+

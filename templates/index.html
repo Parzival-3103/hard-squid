@@ -1,0 +1,14 @@
+{% extends 'base.html' %}{% block title %}Hard Squid — Muévete sin límites{% endblock %}
+{% block content %}
+<section class="hero">
+  <img src="{{ url_for('static', filename='img/hero-hard-squid.png') }}" alt="Atletas usando ropa Hard Squid">
+  <div class="hero-overlay"></div>
+  <div class="hero-content"><span class="eyebrow">NUEVA COLECCIÓN · 2026</span><h1>HECHOS PARA<br><em>NO PARAR.</em></h1><p>Prendas que responden a cada movimiento. Comodidad brutal, diseño limpio y cero excusas.</p><div class="hero-ctas"><a class="button light" href="{{ url_for('catalog', categoria='Dama') }}">Comprar Dama</a><a class="button outline-light" href="{{ url_for('catalog', categoria='Caballero') }}">Comprar Caballero</a></div></div>
+  <div class="hero-index">01 <span></span> 03</div>
+</section>
+<section class="benefits"><div><b>Envíos a todo México</b><span>Rastreo en cada pedido</span></div><div><b>Cambios fáciles</b><span>30 días para decidir</span></div><div><b>Pago seguro</b><span>Tu compra está protegida</span></div></section>
+<section class="section"><div class="section-head"><div><span class="eyebrow dark">EQUIPA TU RITMO</span><h2>Lo nuevo</h2></div><a class="text-link" href="{{ url_for('catalog') }}">Ver colección completa →</a></div><div class="product-grid">{% for product in products %}{% include '_product_card.html' %}{% else %}<p>Aún no hay productos publicados.</p>{% endfor %}</div></section>
+<section class="split-categories"><a href="{{ url_for('catalog', categoria='Dama') }}"><img src="{{ url_for('static', filename='img/producto-mujer.jpg') }}" alt="Colección para dama"><div><span>COLECCIÓN</span><h2>DAMA</h2><b>Comprar ahora →</b></div></a><a href="{{ url_for('catalog', categoria='Caballero') }}"><img src="{{ url_for('static', filename='img/producto-hombre.jpg') }}" alt="Colección para caballero"><div><span>COLECCIÓN</span><h2>CABALLERO</h2><b>Comprar ahora →</b></div></a></section>
+<section class="manifesto"><img src="{{ url_for('static', filename='img/hard-squid-logo.jpg') }}" alt="Logo Hard Squid"><div><span class="eyebrow">NUESTRA ESENCIA</span><h2>FUERZA PARA<br>ADAPTARTE.</h2><p>Como el calamar, cambiamos, resistimos y avanzamos. Hard Squid nace para quienes convierten la presión en movimiento.</p><a class="button light" href="{{ url_for('about') }}">Conoce la marca</a></div></section>
+{% endblock %}
+

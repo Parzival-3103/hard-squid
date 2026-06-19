@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Panel{% endblock %} — Hard Squid</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+</head>
+<body class="admin-body">
+  <aside class="admin-sidebar">
+    <a class="brand" href="{{ url_for('admin_dashboard') }}">
+      <img src="{{ url_for('static', filename='img/hard-squid-logo.jpg') }}" alt="Hard Squid">
+      <span>HARD SQUID</span>
+    </a>
+    <small>GESTIÓN</small>
+    <nav>
+      <a class="{{ 'active' if request.endpoint=='admin_dashboard' }}" href="{{ url_for('admin_dashboard') }}">⌂ Resumen</a>
+      <a class="{{ 'active' if request.endpoint in ['admin_products','admin_product_edit'] }}" href="{{ url_for('admin_products') }}">◇ Productos</a>
+      <a class="{{ 'active' if request.endpoint=='admin_sale' }}" href="{{ url_for('admin_sale') }}">＋ Generar venta</a>
+      <a class="{{ 'active' if request.endpoint=='admin_workers' }}" href="{{ url_for('admin_workers') }}">♙ Trabajadores</a>
+      <a class="{{ 'active' if request.endpoint=='admin_reports' }}" href="{{ url_for('admin_reports') }}">▥ Reportes</a>
+    </nav>
+    <div class="admin-user">
+      <span>{{ session.name[:1] }}</span>
+      <div><b>{{ session.name }}</b><small>{{ session.role }}</small></div>
+      <a href="{{ url_for('logout') }}">Salir</a>
+    </div>
+  </aside>
+
+  <main class="admin-main">
+    <header class="admin-top">
+      <button class="admin-menu" type="button">☰</button>
+      <button class="admin-back-button" type="button" onclick="history.back()">← Regresar</button>
+      <div><span>Panel administrativo</span><b>{{ session.name }}</b></div>
+      <a href="{{ url_for('index') }}">Ver tienda</a>
+    </header>
+
+    {% with messages=get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-stack admin-flashes">
+          {% for category,message in messages %}
+            <div class="flash {{ category }}">{{ message }}<button>×</button></div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="admin-content">{% block content %}{% endblock %}</div>
+  </main>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
