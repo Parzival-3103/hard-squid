@@ -204,3 +204,42 @@ body{
 .danger-text{
   color:var(--red)!important;
 }
+
+.menu-button{
+  color:#fff;
+}
+
+.mobile-nav-actions{
+  display:none;
+}
+
+@media(max-width:1000px){
+  .main-nav{
+    background:#08030f!important;
+    border-top:1px solid rgba(232,221,255,.18);
+    box-shadow:0 18px 40px rgba(0,0,0,.45);
+  }
+
+  .main-nav a{
+    color:#fff!important;
+    padding:10px 0;
+  }
+
+  .mobile-nav-actions{
+    display:grid;
+    gap:10px;
+    margin-top:8px;
+    padding-top:16px;
+    border-top:1px solid rgba(232,221,255,.18);
+  }
+
+  .header-actions>a:not(.cart-link){
+    display:none!important;
+  }
+}
+
+@media(min-width:1001px){
+  .mobile-nav-actions{
+    display:none!important;
+  }
+}

@@ -22,6 +22,19 @@
       <a href="{{ url_for('catalog', categoria='Caballero') }}">Caballero</a>
       <a href="{{ url_for('catalog') }}">Colección</a>
       <a href="{{ url_for('about') }}">Nosotros</a>
+      <span class="mobile-nav-actions">
+        {% if session.user_id %}
+          {% if session.role in ['admin','empleado'] %}
+            <a href="{{ url_for('admin_dashboard') }}">← Regresar al admin</a>
+          {% else %}
+            <a href="{{ url_for('my_orders') }}">Hola, {{ session.name.split()[0] }}</a>
+          {% endif %}
+          <a href="{{ url_for('logout') }}">Salir</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Ingresar</a>
+          <a href="{{ url_for('register') }}">Crear cuenta</a>
+        {% endif %}
+      </span>
     </nav>
     <div class="header-actions">
       {% if session.user_id %}
