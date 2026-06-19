@@ -1,6 +1,7 @@
 import csv
 import os
 import secrets
+from urllib.parse import urlparse
 from datetime import datetime
 from decimal import Decimal
 from functools import wraps
@@ -33,6 +34,17 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASSWORD") or os.getenv("MYSQLPASSWORD") or "",
     "database": os.getenv("DB_NAME") or os.getenv("MYSQLDATABASE") or "hard_squid",
 }
+
+mysql_url = os.getenv("MYSQL_URL") or os.getenv("DATABASE_URL")
+if mysql_url:
+    parsed = urlparse(mysql_url)
+    DB_CONFIG.update({
+        "host": parsed.hostname or DB_CONFIG["host"],
+        "port": parsed.port or DB_CONFIG["port"],
+        "user": parsed.username or DB_CONFIG["user"],
+        "password": parsed.password or DB_CONFIG["password"],
+        "database": (parsed.path or "").lstrip("/") or DB_CONFIG["database"],
+    })
 
 
 def get_db(database=True):
