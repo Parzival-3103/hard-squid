@@ -1,0 +1,10 @@
+{% extends 'admin/base.html' %}
+{% block title %}Compras{% endblock %}
+{% block content %}
+<div class="admin-heading"><div><span class="eyebrow dark">COMPRAS</span><h1>Compras</h1><p>Registra compras realizadas a proveedores.</p></div><button class="button dark" data-modal-open="purchase-modal">＋ Nueva compra</button></div>
+<section class="panel"><div class="table-wrap"><table class="data-table">
+  <thead><tr><th>Folio</th><th>Fecha</th><th>Proveedor</th><th>Concepto</th><th>Método</th><th>Total</th></tr></thead>
+  <tbody>{% for purchase in purchases %}<tr><td>#CO-{{ '%06d'|format(purchase.id) }}</td><td>{{ purchase.created_at.strftime('%d/%m/%Y') }}</td><td>{{ purchase.supplier_name or 'Sin proveedor' }}</td><td>{{ purchase.concept }}</td><td>{{ purchase.payment_method }}</td><td><b>{{ purchase.total|money }}</b></td></tr>{% else %}<tr><td colspan="6">No hay compras.</td></tr>{% endfor %}</tbody>
+</table></div></section>
+<dialog id="purchase-modal" class="modal"><form method="post"><button type="button" class="modal-close">×</button><span class="eyebrow dark">NUEVA COMPRA</span><h2>Registrar compra</h2><div class="form-grid"><label class="full">Proveedor<select name="supplier_id"><option value="">Sin proveedor</option>{% for supplier in suppliers %}<option value="{{ supplier.id }}">{{ supplier.name }}</option>{% endfor %}</select></label><label class="full">Concepto<input name="concept" required placeholder="Compra de prendas, telas o insumos"></label><label>Total<input type="number" step=".01" min="0" name="total" required></label><label>Método<input name="payment_method" value="Transferencia"></label></div><button class="button dark wide">Guardar compra</button></form></dialog>
+{% endblock %}

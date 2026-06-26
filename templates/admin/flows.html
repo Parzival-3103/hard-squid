@@ -1,0 +1,6 @@
+{% extends 'admin/base.html' %}
+{% block title %}Diagramas{% endblock %}
+{% block content %}
+<div class="admin-heading"><div><span class="eyebrow dark">DIAGRAMAS DE FLUJO</span><h1>Procesos del sistema</h1><p>Flujos básicos para clientes, ventas, productos, vendedores, proveedores y compras.</p></div></div>
+<section class="panel flow-panel"><div class="flow-select">{% for name in ['Clientes','Ventas','Productos','Vendedores','Proveedores','Compras'] %}<button type="button" data-flow="{{ name|lower }}">{{ name }}</button>{% endfor %}</div><div class="flow-wrap"><svg id="flowSvg" viewBox="0 0 860 420" role="img" aria-label="Diagrama de flujo"></svg></div><p id="flowDesc" class="muted"></p></section>
+{% endblock %}

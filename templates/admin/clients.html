@@ -1,0 +1,9 @@
+{% extends 'admin/base.html' %}
+{% block title %}Clientes{% endblock %}
+{% block content %}
+<div class="admin-heading"><div><span class="eyebrow dark">CLIENTES</span><h1>Usuarios registrados</h1><p>Consulta clientes y su historial comercial.</p></div></div>
+<section class="panel"><div class="table-wrap"><table class="data-table">
+  <thead><tr><th>Cliente</th><th>Correo</th><th>Alta</th><th>Compras</th><th>Total gastado</th><th>Estado</th></tr></thead>
+  <tbody>{% for client in clients %}<tr><td><b>{{ client.name }}</b></td><td>{{ client.email }}</td><td>{{ client.created_at.strftime('%d/%m/%Y') }}</td><td>{{ client.orders_count }}</td><td>{{ client.total_spent|money }}</td><td><span class="status {{ 'active' if client.active else 'inactive' }}">{{ 'Activo' if client.active else 'Baja' }}</span></td></tr>{% else %}<tr><td colspan="6">No hay clientes.</td></tr>{% endfor %}</tbody>
+</table></div></section>
+{% endblock %}

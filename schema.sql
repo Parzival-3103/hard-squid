@@ -21,9 +21,30 @@ CREATE TABLE IF NOT EXISTS products (
   category ENUM('Dama','Caballero','Unisex') NOT NULL,
   size VARCHAR(80) NOT NULL DEFAULT 'Unitalla',
   image VARCHAR(255) NOT NULL,
+  supplier_id INT NULL,
   featured BOOLEAN NOT NULL DEFAULT FALSE,
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS suppliers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(160) NOT NULL,
+  contact VARCHAR(120) NULL,
+  email VARCHAR(160) NULL,
+  phone VARCHAR(40) NULL,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS purchases (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  supplier_id INT NULL,
+  concept VARCHAR(180) NOT NULL,
+  total DECIMAL(10,2) NOT NULL DEFAULT 0,
+  payment_method VARCHAR(60) NOT NULL DEFAULT 'Transferencia',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_purchases_suppliers FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -49,6 +70,19 @@ CREATE TABLE IF NOT EXISTS order_items (
   CONSTRAINT fk_items_products FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NULL,
+  action VARCHAR(120) NOT NULL,
+  detail VARCHAR(255) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_activity_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+INSERT INTO suppliers (name,contact,email,phone)
+SELECT * FROM (SELECT 'Textiles Urbanos MX','Laura Mendoza','ventas@textilesurbanos.mx','5555123456') seed
+WHERE NOT EXISTS (SELECT 1 FROM suppliers LIMIT 1);
+
 INSERT INTO products (name,description,price,cost,stock,category,size,image,featured)
 SELECT * FROM (SELECT 'Playera Core Training','Playera deportiva transpirable de secado rápido para entrenamientos intensos.',499.00,245.00,28,'Caballero','CH, M, G, XG','img/producto-hombre.jpg',TRUE) seed
 WHERE NOT EXISTS (SELECT 1 FROM products LIMIT 1);
@@ -58,4 +92,3 @@ WHERE (SELECT COUNT(*) FROM products)=1;
 INSERT INTO products (name,description,price,cost,stock,category,size,image,featured)
 SELECT 'Sudadera Kraken Essential','Sudadera unisex de tacto suave y corte relajado para antes y después del entrenamiento.',899.00,430.00,15,'Unisex','CH, M, G, XG','img/producto-unisex.jpg',TRUE
 WHERE (SELECT COUNT(*) FROM products)=2;
-

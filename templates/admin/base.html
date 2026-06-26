@@ -18,11 +18,15 @@
     </a>
     <small>GESTIÓN</small>
     <nav>
-      <a class="{{ 'active' if request.endpoint=='admin_dashboard' }}" href="{{ url_for('admin_dashboard') }}">⌂ Resumen</a>
-      <a class="{{ 'active' if request.endpoint in ['admin_products','admin_product_edit'] }}" href="{{ url_for('admin_products') }}">◇ Productos</a>
-      <a class="{{ 'active' if request.endpoint=='admin_sale' }}" href="{{ url_for('admin_sale') }}">＋ Generar venta</a>
-      <a class="{{ 'active' if request.endpoint=='admin_workers' }}" href="{{ url_for('admin_workers') }}">♙ Trabajadores</a>
-      <a class="{{ 'active' if request.endpoint=='admin_reports' }}" href="{{ url_for('admin_reports') }}">▥ Reportes</a>
+      <a class="{{ 'active' if request.endpoint=='admin_dashboard' }}" href="{{ url_for('admin_dashboard') }}">Resumen</a>
+      <a class="{{ 'active' if request.endpoint=='admin_clients' }}" href="{{ url_for('admin_clients') }}">Clientes</a>
+      <a class="{{ 'active' if request.endpoint in ['admin_sale','admin_reports'] }}" href="{{ url_for('admin_sale') }}">Ventas</a>
+      <a class="{{ 'active' if request.endpoint in ['admin_products','admin_product_edit'] }}" href="{{ url_for('admin_products') }}">Productos</a>
+      <a class="{{ 'active' if request.endpoint=='admin_workers' }}" href="{{ url_for('admin_workers') }}">Vendedores</a>
+      <a class="{{ 'active' if request.endpoint=='admin_suppliers' }}" href="{{ url_for('admin_suppliers') }}">Proveedores</a>
+      <a class="{{ 'active' if request.endpoint=='admin_purchases' }}" href="{{ url_for('admin_purchases') }}">Compras</a>
+      <a class="{{ 'active' if request.endpoint=='admin_activities' }}" href="{{ url_for('admin_activities') }}">Actividades</a>
+      <a class="{{ 'active' if request.endpoint=='admin_flows' }}" href="{{ url_for('admin_flows') }}">Diagramas</a>
     </nav>
     <div class="admin-user">
       <span>{{ session.name[:1] }}</span>

@@ -1,0 +1,10 @@
+{% extends 'admin/base.html' %}
+{% block title %}Proveedores{% endblock %}
+{% block content %}
+<div class="admin-heading"><div><span class="eyebrow dark">PROVEEDORES</span><h1>Proveedores</h1><p>Registra proveedores para asociarlos a productos y compras.</p></div><button class="button dark" data-modal-open="supplier-modal">＋ Nuevo proveedor</button></div>
+<section class="panel"><div class="table-wrap"><table class="data-table">
+  <thead><tr><th>Proveedor</th><th>Contacto</th><th>Correo</th><th>Teléfono</th><th>Productos</th><th>Compras</th><th>Estado</th><th>Acción</th></tr></thead>
+  <tbody>{% for supplier in suppliers %}<tr><td><b>{{ supplier.name }}</b></td><td>{{ supplier.contact or '—' }}</td><td>{{ supplier.email or '—' }}</td><td>{{ supplier.phone or '—' }}</td><td>{{ supplier.products_count }}</td><td>{{ supplier.purchases_total|money }}</td><td><span class="status {{ 'active' if supplier.active else 'inactive' }}">{{ 'Activo' if supplier.active else 'Baja' }}</span></td><td><form method="post" action="{{ url_for('admin_supplier_status', supplier_id=supplier.id) }}"><button class="text-button">{{ 'Dar de baja' if supplier.active else 'Reactivar' }}</button></form></td></tr>{% else %}<tr><td colspan="8">No hay proveedores.</td></tr>{% endfor %}</tbody>
+</table></div></section>
+<dialog id="supplier-modal" class="modal"><form method="post"><button type="button" class="modal-close">×</button><span class="eyebrow dark">ALTA</span><h2>Nuevo proveedor</h2><div class="form-grid"><label class="full">Nombre<input name="name" required></label><label>Contacto<input name="contact"></label><label>Teléfono<input name="phone"></label><label class="full">Correo<input type="email" name="email"></label></div><button class="button dark wide">Guardar proveedor</button></form></dialog>
+{% endblock %}

@@ -33,7 +33,7 @@
               <img src="{{ url_for('static', filename=product.image) }}" alt="">
               <div>
                 <b>{{ product.name }}</b>
-                <small>#{{ product.id }} · {{ product.size }}</small>
+                <small>#{{ product.id }} · {{ product.size }} · {{ product.supplier_name or 'Sin proveedor' }}</small>
               </div>
             </div>
           </td>
@@ -78,6 +78,7 @@
       <label>Costo<input type="number" name="cost" step=".01" min="0" required></label>
       <label>Stock<input type="number" name="stock" min="0" required></label>
       <label>Categoría<select name="category"><option>Dama</option><option>Caballero</option><option>Unisex</option></select></label>
+      <label class="full">Proveedor<select name="supplier_id"><option value="">Sin proveedor</option>{% for supplier in suppliers %}<option value="{{ supplier.id }}">{{ supplier.name }}</option>{% endfor %}</select></label>
       <label class="full">Tallas<input name="size" placeholder="CH, M, G, XG"></label>
       <label class="full file-input">Imagen<input type="file" name="image" accept="image/png,image/jpeg,image/webp"><span>PNG, JPG o WEBP · Máximo 5 MB</span></label>
       <label class="checkbox full"><input type="checkbox" name="featured"> Mostrar como producto destacado</label>

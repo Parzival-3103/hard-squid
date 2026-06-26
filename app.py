@@ -83,6 +83,14 @@ def money(value):
 app.jinja_env.filters["money"] = money
 
 
+def log_activity(action, detail="", user_id=None):
+    try:
+        execute("INSERT INTO activity_logs(user_id,action,detail) VALUES(%s,%s,%s)",
+                (user_id or session.get("user_id"), action, detail))
+    except Exception as exc:
+        app.logger.warning("No se pudo registrar actividad: %s", exc)
+
+
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -131,6 +139,13 @@ def database_error(error):
 
 
 @app.route("/")
+def admin_entry():
+    if session.get("role") in {"admin", "empleado"}:
+        return redirect(url_for("admin_dashboard"))
+    return redirect(url_for("login", next=url_for("admin_dashboard")))
+
+
+@app.route("/tienda")
 def index():
     featured = query_all("SELECT * FROM products WHERE active=1 ORDER BY featured DESC, created_at DESC LIMIT 8")
     best = query_all("""
@@ -184,6 +199,7 @@ def register():
         else:
             user_id = execute("INSERT INTO users(name,email,password_hash,role) VALUES(%s,%s,%s,'cliente')", (name, email, generate_password_hash(password)))
             session.update(user_id=user_id, name=name, role="cliente")
+            log_activity("Registro de usuario", f"Cuenta creada: {email}", user_id)
             flash("Tu cuenta está lista. ¡Bienvenido a Hard Squid!", "success")
             return redirect(url_for("index"))
     return render_template("register.html")
@@ -197,6 +213,7 @@ def login():
         if user and check_password_hash(user["password_hash"], request.form.get("password", "")):
             session.clear()
             session.update(user_id=user["id"], name=user["name"], role=user["role"])
+            log_activity("Inicio de sesiÃ³n", f"Acceso como {user['role']}", user["id"])
             flash(f"Qué gusto verte, {user['name']}.", "success")
             destination = "admin_dashboard" if user["role"] in {"admin", "empleado"} else "index"
             return redirect(request.args.get("next") or url_for(destination))
@@ -206,9 +223,10 @@ def login():
 
 @app.route("/logout")
 def logout():
+    log_activity("Cierre de sesiÃ³n", "El usuario saliÃ³ del sistema")
     session.clear()
     flash("Sesión cerrada correctamente.", "success")
-    return redirect(url_for("index"))
+    return redirect(url_for("login"))
 
 
 def cart_details():
@@ -300,6 +318,7 @@ def place_order():
             flash(str(exc), "danger")
             return redirect(url_for("cart"))
     session["cart"] = {}
+    log_activity("Compra en tienda", f"Orden #{order_id} por {money(total)}")
     flash("Compra realizada. Tu ticket ya está disponible.", "success")
     return redirect(url_for("ticket", order_id=order_id))
 
@@ -329,6 +348,8 @@ def admin_dashboard():
         (SELECT COUNT(*) FROM orders) orders_count,
         (SELECT COUNT(*) FROM users WHERE role='cliente' AND active=1) customers,
         (SELECT COUNT(*) FROM users WHERE role='empleado' AND active=1) employees,
+        (SELECT COUNT(*) FROM suppliers WHERE active=1) suppliers,
+        (SELECT COUNT(*) FROM purchases) purchases,
         (SELECT COUNT(*) FROM products WHERE active=1) products,
         (SELECT COUNT(*) FROM products WHERE active=1 AND stock<=5) low_stock""")
     recent = query_all("SELECT o.*,u.name FROM orders o JOIN users u ON u.id=o.user_id ORDER BY o.created_at DESC LIMIT 6")
@@ -346,15 +367,21 @@ def admin_products():
     if request.method == "POST":
         try:
             image = save_image(request.files.get("image")) or "img/producto-unisex.jpg"
-            execute("""INSERT INTO products(name,description,price,cost,stock,category,size,image,featured)
-                       VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+            supplier_id = request.form.get("supplier_id") or None
+            execute("""INSERT INTO products(name,description,price,cost,stock,category,size,image,featured,supplier_id)
+                       VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                     (request.form["name"].strip(), request.form["description"].strip(), request.form["price"], request.form.get("cost", 0),
-                     request.form["stock"], request.form["category"], request.form.get("size", "Unitalla"), image, bool(request.form.get("featured"))))
+                     request.form["stock"], request.form["category"], request.form.get("size", "Unitalla"), image, bool(request.form.get("featured")), supplier_id))
+            log_activity("Producto creado", request.form["name"].strip())
             flash("Producto publicado.", "success")
             return redirect(url_for("admin_products"))
         except (ValueError, KeyError) as exc:
             flash(str(exc), "danger")
-    return render_template("admin/products.html", products=query_all("SELECT * FROM products ORDER BY active DESC,created_at DESC"))
+    products = query_all("""SELECT p.*,s.name supplier_name FROM products p
+                            LEFT JOIN suppliers s ON s.id=p.supplier_id
+                            ORDER BY p.active DESC,p.created_at DESC""")
+    suppliers = query_all("SELECT id,name FROM suppliers WHERE active=1 ORDER BY name")
+    return render_template("admin/products.html", products=products, suppliers=suppliers)
 
 
 @app.route("/admin/productos/<int:product_id>/editar", methods=["GET", "POST"])
@@ -366,20 +393,24 @@ def admin_product_edit(product_id):
     if request.method == "POST":
         try:
             image = save_image(request.files.get("image")) or product["image"]
-            execute("""UPDATE products SET name=%s,description=%s,price=%s,cost=%s,stock=%s,category=%s,size=%s,image=%s,featured=%s WHERE id=%s""",
+            supplier_id = request.form.get("supplier_id") or None
+            execute("""UPDATE products SET name=%s,description=%s,price=%s,cost=%s,stock=%s,category=%s,size=%s,image=%s,featured=%s,supplier_id=%s WHERE id=%s""",
                     (request.form["name"].strip(), request.form["description"].strip(), request.form["price"], request.form.get("cost", 0), request.form["stock"],
-                     request.form["category"], request.form.get("size", "Unitalla"), image, bool(request.form.get("featured")), product_id))
+                     request.form["category"], request.form.get("size", "Unitalla"), image, bool(request.form.get("featured")), supplier_id, product_id))
+            log_activity("Producto actualizado", request.form["name"].strip())
             flash("Producto actualizado.", "success")
             return redirect(url_for("admin_products"))
         except ValueError as exc:
             flash(str(exc), "danger")
-    return render_template("admin/product_form.html", product=product)
+    suppliers = query_all("SELECT id,name FROM suppliers WHERE active=1 ORDER BY name")
+    return render_template("admin/product_form.html", product=product, suppliers=suppliers)
 
 
 @app.post("/admin/productos/<int:product_id>/estado")
 @admin_required
 def admin_product_status(product_id):
     execute("UPDATE products SET active=NOT active WHERE id=%s", (product_id,))
+    log_activity("Estado de producto", f"Producto #{product_id}")
     flash("Estado del producto actualizado.", "success")
     return redirect(url_for("admin_products"))
 
@@ -393,6 +424,7 @@ def admin_product_delete(product_id):
         return redirect(url_for("admin_products"))
 
     execute("DELETE FROM products WHERE id=%s", (product_id,))
+    log_activity("Producto eliminado", product["name"])
     cart = session.get("cart", {})
     if str(product_id) in cart:
         cart.pop(str(product_id), None)
@@ -422,8 +454,80 @@ def admin_workers():
 @admin_required
 def admin_worker_status(user_id):
     execute("UPDATE users SET active=NOT active WHERE id=%s AND role='empleado'", (user_id,))
+    log_activity("Estado de vendedor", f"Usuario #{user_id}")
     flash("Estado del trabajador actualizado.", "success")
     return redirect(url_for("admin_workers"))
+
+
+@app.get("/admin/clientes")
+@admin_required
+def admin_clients():
+    clients = query_all("""SELECT u.*,
+                           (SELECT COUNT(*) FROM orders o WHERE o.user_id=u.id) orders_count,
+                           (SELECT COALESCE(SUM(total),0) FROM orders o WHERE o.user_id=u.id) total_spent
+                           FROM users u WHERE role='cliente' ORDER BY created_at DESC""")
+    return render_template("admin/clients.html", clients=clients)
+
+
+@app.route("/admin/proveedores", methods=["GET", "POST"])
+@admin_required
+def admin_suppliers():
+    if request.method == "POST":
+        execute("INSERT INTO suppliers(name,contact,email,phone) VALUES(%s,%s,%s,%s)",
+                (request.form["name"].strip(), request.form.get("contact", "").strip(),
+                 request.form.get("email", "").strip(), request.form.get("phone", "").strip()))
+        log_activity("Proveedor creado", request.form["name"].strip())
+        flash("Proveedor registrado.", "success")
+        return redirect(url_for("admin_suppliers"))
+    suppliers = query_all("""SELECT s.*,
+                             (SELECT COUNT(*) FROM products p WHERE p.supplier_id=s.id) products_count,
+                             (SELECT COALESCE(SUM(total),0) FROM purchases p WHERE p.supplier_id=s.id) purchases_total
+                             FROM suppliers s ORDER BY active DESC,name""")
+    return render_template("admin/suppliers.html", suppliers=suppliers)
+
+
+@app.post("/admin/proveedores/<int:supplier_id>/estado")
+@admin_required
+def admin_supplier_status(supplier_id):
+    execute("UPDATE suppliers SET active=NOT active WHERE id=%s", (supplier_id,))
+    log_activity("Estado de proveedor", f"Proveedor #{supplier_id}")
+    flash("Estado del proveedor actualizado.", "success")
+    return redirect(url_for("admin_suppliers"))
+
+
+@app.route("/admin/compras", methods=["GET", "POST"])
+@admin_required
+def admin_purchases():
+    if request.method == "POST":
+        execute("INSERT INTO purchases(supplier_id,concept,total,payment_method) VALUES(%s,%s,%s,%s)",
+                (request.form.get("supplier_id") or None, request.form["concept"].strip(), request.form["total"], request.form.get("payment_method", "Transferencia")))
+        log_activity("Compra registrada", request.form["concept"].strip())
+        flash("Compra registrada.", "success")
+        return redirect(url_for("admin_purchases"))
+    suppliers = query_all("SELECT id,name FROM suppliers WHERE active=1 ORDER BY name")
+    purchases = query_all("""SELECT p.*,s.name supplier_name FROM purchases p
+                             LEFT JOIN suppliers s ON s.id=p.supplier_id
+                             ORDER BY p.created_at DESC""")
+    return render_template("admin/purchases.html", purchases=purchases, suppliers=suppliers)
+
+
+@app.get("/admin/actividades")
+@admin_required
+def admin_activities():
+    users = query_all("""SELECT u.*,
+                         (SELECT COUNT(*) FROM activity_logs a WHERE a.user_id=u.id) activity_count,
+                         (SELECT COUNT(*) FROM orders o WHERE o.user_id=u.id) orders_count
+                         FROM users u ORDER BY created_at DESC""")
+    logs = query_all("""SELECT a.*,u.name,u.email FROM activity_logs a
+                        LEFT JOIN users u ON u.id=a.user_id
+                        ORDER BY a.created_at DESC LIMIT 200""")
+    return render_template("admin/activities.html", users=users, logs=logs)
+
+
+@app.get("/admin/diagramas")
+@admin_required
+def admin_flows():
+    return render_template("admin/flows.html")
 
 
 @app.route("/admin/venta", methods=["GET", "POST"])
@@ -450,6 +554,7 @@ def admin_sale():
                 cursor.execute("UPDATE products SET stock=stock-%s WHERE id=%s", (quantity, product["id"]))
                 db.commit()
             flash(f"Venta #{order_id} registrada.", "success")
+            log_activity("Venta de mostrador", f"Venta #{order_id} por {money(total)}")
             return redirect(url_for("ticket", order_id=order_id))
     return render_template("admin/sale.html", products=products)
 
@@ -503,6 +608,14 @@ def initialize_database():
     with db:
         for statement in statements:
             cursor.execute(statement)
+        try:
+            cursor.execute("ALTER TABLE products ADD COLUMN supplier_id INT NULL")
+        except Exception:
+            pass
+        try:
+            cursor.execute("ALTER TABLE products ADD CONSTRAINT fk_products_suppliers FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL")
+        except Exception:
+            pass
         db.commit()
 
     with get_db() as db:
